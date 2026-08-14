@@ -1,0 +1,534 @@
+<html lang="es" class="dark h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco-Balanza: Dinámica Climática Global • IPCC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.98);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
+        }
+        .option-card {
+            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid rgba(51, 65, 85, 1);
+            transition: all 0.2s ease;
+        }
+        .option-card:hover:not(:disabled) {
+            border-color: #3b82f6;
+            background: rgba(30, 41, 59, 1);
+            transform: translateY(-2px);
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .shake-effect {
+            animation: shake 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-[#040711] text-slate-100 font-sans h-full m-0 flex flex-col overflow-hidden">
+
+    <!-- Modal / Pantalla de Advertencia del IPCC (Inicio) -->
+    <div id="ipcc-modal" class="fixed inset-0 z-50 bg-slate-950/95 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="glass-panel max-w-2xl w-full p-6 sm:p-8 rounded-2xl border border-blue-500/40 text-left relative">
+            <div class="absolute top-4 right-4 text-xs font-bold uppercase tracking-wider text-blue-400 bg-blue-950/80 px-3 py-1 rounded-full border border-blue-600/30">
+                Informe Especial IPCC
+            </div>
+            
+            <h2 class="text-xl sm:text-2xl font-extrabold text-blue-100 mb-2 mt-2">Umbrales de Calentamiento Global</h2>
+            <p class="text-xs sm:text-sm text-slate-300 mb-5 leading-relaxed">
+                El Panel Intergubernamental de Expertos sobre el Cambio Climático (IPCC) advierte sistemáticamente sobre las consecuencias irreversibles de superar los umbrales críticos de anomalía térmica respecto a los niveles preindustriales:
+            </p>
+
+            <div class="space-y-3 mb-6">
+                <div class="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-600/30 flex items-start gap-3">
+                    <span class="text-xl">🌱</span>
+                    <div>
+                        <h3 class="text-sm font-bold text-emerald-400">1.1 °C • Estado Actual</h3>
+                        <p class="text-xs text-slate-300">Nivel actual de calentamiento observado. Eventos climáticos extremos más frecuentes y acidificación oceánica avanzada.</p>
+                    </div>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-amber-950/40 border border-amber-600/30 flex items-start gap-3">
+                    <span class="text-xl">⚠️</span>
+                    <div>
+                        <h3 class="text-sm font-bold text-amber-400">1.5 °C • El Límite Crítico del Acuerdo de París</h3>
+                        <p class="text-xs text-slate-300">Umbral clave para evitar puntos de inflexión (tipping points) catastróficos, pérdida masiva de arrecifes de coral y desestabilización del permafrost.</p>
+                    </div>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-red-950/40 border border-red-600/30 flex items-start gap-3">
+                    <span class="text-xl">🔥</span>
+                    <div>
+                        <h3 class="text-sm font-bold text-red-400">2.0 °C y Superior • Zona de Alto Riesgo Sistémico</h3>
+                        <p class="text-xs text-slate-300">Colapso de sumideros de carbono terrestres y oceánicos, riesgo severo de retroalimentaciones desbocadas y alteración total de la circulación termohalina.</p>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="startGame()" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm uppercase tracking-wider transition-all shadow-lg shadow-blue-600/30">
+                Comenzar Simulación Climática →
+            </button>
+        </div>
+    </div>
+
+    <!-- Contenedor Principal en Pantalla Completa -->
+    <div class="flex-1 w-full h-full glass-panel flex flex-col justify-between p-3 sm:p-5 relative overflow-y-auto" id="main-wrapper">
+        
+        <!-- HUD / Panel Superior -->
+        <header class="w-full border-b border-slate-800 pb-3 mb-3 flex-shrink-0">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+                <span id="phase-tag" class="text-xs font-bold uppercase tracking-wider text-blue-400 bg-blue-950/80 px-3 py-1 rounded-full border border-blue-600/30">Desafío 1 de 15</span>
+                
+                <!-- Vidas representadas como Tierras vivas vs Tierras sin vida -->
+                <div id="lives-container" class="flex gap-2 text-base items-center">
+                    <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider mr-1">Resiliencia Planetaria:</span>
+                    <span title="Planeta Vivo">🌍</span>
+                    <span title="Planeta Vivo">🌍</span>
+                    <span title="Planeta Vivo">🌍</span>
+                </div>
+            </div>
+
+            <!-- Medidores y Gráfica en Tiempo Real -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 bg-slate-900/90 p-3 rounded-xl border border-slate-800 text-xs sm:text-sm items-center">
+                <div class="grid grid-cols-2 lg:grid-cols-1 gap-2">
+                    <div class="bg-slate-950/50 p-2 rounded-lg border border-slate-800/80">
+                        <span class="text-slate-400 block text-[11px] mb-0.5">Anomalía Térmica Global</span>
+                        <span id="stat-temp" class="text-base sm:text-lg font-bold text-emerald-400">1.1 °C</span>
+                    </div>
+                    <div class="bg-slate-950/50 p-2 rounded-lg border border-slate-800/80">
+                        <span class="text-slate-400 block text-[11px] mb-0.5">Gases en Tropósfera</span>
+                        <span id="stat-gases" class="text-base sm:text-lg font-bold text-blue-400">50 Gt</span>
+                    </div>
+                </div>
+                
+                <!-- Lienzo del Gráfico de Dinámica Planetaria -->
+                <div class="lg:col-span-2 h-24 sm:h-28 w-relative bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 flex items-center justify-center">
+                    <canvas id="climateChart"></canvas>
+                </div>
+            </div>
+        </header>
+
+        <!-- Contenedor Dinámico del Juego -->
+        <main id="game-container" class="flex-1 flex flex-col justify-center max-w-4xl mx-auto w-full my-auto"></main>
+
+        <!-- Pie de página -->
+        <footer class="w-full mt-3 pt-2 border-t border-slate-800 text-center text-[11px] text-slate-500 flex-shrink-0">
+            Simulador de Dinámica de Sistemas Climáticos • Monitoreo Gráfico en Tiempo Real
+        </footer>
+    </div>
+
+    <script>
+        let gameState = {
+            lives: 3,
+            temp: 1.1,
+            gases: 50,
+            currentIndex: 0,
+            history: {
+                labels: ["Inicio", "D1"],
+                temp: [1.1, 1.1],
+                gases: [50, 50]
+            }
+        };
+
+        let climateChart = null;
+
+        function startGame() {
+            document.getElementById('ipcc-modal').classList.add('hidden');
+            initChart();
+            renderGame();
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('climateChart').getContext('2d');
+            climateChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: gameState.history.labels,
+                    datasets: [
+                        {
+                            label: 'Temp (°C)',
+                            data: gameState.history.temp,
+                            borderColor: '#34d399',
+                            backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            yAxisID: 'yTemp',
+                            pointRadius: 2
+                        },
+                        {
+                            label: 'Gases (Gt)',
+                            data: gameState.history.gases,
+                            borderColor: '#60a5fa',
+                            backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            yAxisID: 'yGases',
+                            pointRadius: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#94a3b8',
+                                font: { size: 10 },
+                                boxWidth: 12
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(51, 65, 85, 0.2)' },
+                            ticks: { color: '#64748b', font: { size: 9 } }
+                        },
+                        yTemp: {
+                            type: 'linear',
+                            position: 'left',
+                            min: 0.5,
+                            max: 4.0,
+                            grid: { color: 'rgba(51, 65, 85, 0.2)' },
+                            ticks: { color: '#34d399', font: { size: 9 } }
+                        },
+                        yGases: {
+                            type: 'linear',
+                            position: 'right',
+                            min: 0,
+                            max: 300,
+                            grid: { display: false },
+                            ticks: { color: '#60a5fa', font: { size: 9 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChartData() {
+            gameState.history.labels.push(`D${gameState.currentIndex + 1}`);
+            gameState.history.temp.push(gameState.temp);
+            gameState.history.gases.push(gameState.gases);
+            if(climateChart) {
+                climateChart.update();
+            }
+        }
+
+        const questions = [
+            {
+                phase: "Desafío 1 de 15: Fundamentos Termodinámicos",
+                title: "El Exceso de Gases en la Tropósfera",
+                context: "Las emisiones industriales superan la biocapacidad de captura de los océanos, bosques y suelos. Las concentraciones de GEI suben drásticamente.",
+                question: "¿Qué ocurre termodinámicamente cuando los gases de efecto invernadero (GEI) superan de forma permanente la capacidad de captura de la atmósfera, los océanos y los suelos?",
+                options: [
+                    { text: "Se acumulan en la tropósfera, intensificando el forzamiento radiativo y reteniendo la radiación infrarroja de onda larga.", correct: true, fTitle: "✨ ¡Excelente Análisis!", fText: "Comprendes perfectamente el balance energético. El exceso de GEI no desaparece, sino que satura las capas bajas reteniendo calor." },
+                    { text: "Son disipados automáticamente hacia el espacio profundo debido a la fuerza de gravedad y rotación terrestre.", correct: false, fTitle: "⚡ Refuerzo: Error de Retención", fText: "Los sumideros tienen límites de saturación. El excedente no se disipa al espacio exterior; se concentra en la tropósfera." },
+                    { text: "Se transforman de inmediato en agua líquida al entrar en contacto con las placas tectónicas subterráneas.", correct: false, fTitle: "⚡ Refuerzo: Falacia Geológica", fText: "Las placas tectónicas no absorben gases atmosféricos de esta manera. El exceso de GEI permanece activo alterando el clima." }
+                ]
+            },
+            {
+                phase: "Desafío 2 de 15: Sumideros Oceánicos",
+                title: "La Saturación del Océano Global",
+                context: "El océano absorbe gran parte del calor y el carbono antropogénico, pero su capacidad tampón empieza a mostrar signos críticos de fatiga.",
+                question: "¿Cuál es una consecuencia fisicoquímica directa de la excesiva absorción de carbono en los océanos cuando superan su capacidad de captura?",
+                options: [
+                    { text: "Disminución del pH oceánico (acidificación), afectando severamente a organismos calcificadores como corales y fitoplancton.", correct: true, fTitle: "🌟 ¡Acierto Sistémico!", fText: "La acidificación rompe las cadenas tróficas marinas al dificultar la formación de estructuras de carbonato de calcio." },
+                    { text: "Aumento masivo e instantáneo de la salinidad global debido a la evaporación del agua marina.", correct: false, fTitle: "⚡ Refuerzo: Mecanismo Erróneo", fText: "La absorción de carbono altera el equilibrio ácido-base, no la salinidad general de forma directa y masiva." },
+                    { text: "Transformación total del agua salada en agua dulce potable por neutralización química natural.", correct: false, fTitle: "⚡ Refuerzo: Falacia Química", fText: "La disolución de dióxido de carbono genera ácido carbónico, acidificando el medio, jamás convirtiéndolo en agua dulce." }
+                ]
+            },
+            {
+                phase: "Desafío 3 de 15: Dinámica de Suelos",
+                title: "Degradación y Pérdida de Sumideros Terrestres",
+                context: "El cambio de uso de suelo y la agricultura intensiva reducen drásticamente la capacidad de retención de carbono orgánico en los suelos.",
+                question: "Cuando los suelos pierden su cobertura vegetal y sufren erosión severa, ¿cómo impacta esto en el ciclo global del carbono?",
+                options: [
+                    { text: "Se liberan a la atmósfera grandes cantidades de carbono previamente almacenado en forma de materia orgánica descompuesta.", correct: true, fTitle: "✨ ¡Muy bien!", fText: "Los suelos sanos son sumideros vitales; al degradarse, pasan de sumideros netos a fuentes emisoras de carbono." },
+                    { text: "El suelo secuestra de manera permanente y acelerada el doble de dióxido de carbono para compensar la pérdida de bosques.", correct: false, fTitle: "⚡ Refuerzo: Contradicción Dinámica", fText: "Un suelo degradado pierde su microbiota y capacidad de captura, empeorando el balance general en lugar de compensarlo." },
+                    { text: "El carbono del suelo se solidifica convirtiéndose en diamantes subterráneos debido a la presión atmosférica.", correct: false, fTitle: "⚡ Refuerzo: Mito Geológico", fText: "El carbono orgánico del suelo liberado por degradación se oxida y escapa como gas a la atmósfera." }
+                ]
+            },
+            {
+                phase: "Desafío 4 de 15: Retroalimentación del Albedo",
+                title: "El Deshielo Ártico y la Pérdida de Albedo",
+                context: "El incremento de la temperatura global derrite el hielo marino y los glaciares a un ritmo acelerado.",
+                question: "¿Qué efecto produce la reducción del hielo polar sobre el balance térmico del planeta (bucle de retroalimentación)?",
+                options: [
+                    { text: "Disminuye el albedo planetario, haciendo que la superficie oscura de los océanos absorba más radiación solar y acelere el calentamiento.", correct: true, fTitle: "🌟 ¡Excelente Comprensión!", fText: "Menos hielo reflectante significa mayor absorción de energía solar, un claro ejemplo de retroalimentación positiva climática." },
+                    { text: "Aumenta la reflexión de los rayos solares enfriando automáticamente las regiones tropicales y ecuatoriales.", correct: false, fTitle: "⚡ Refuerzo: Efecto Inverso", fText: "Al perder superficies blancas reflectantes (hielo), el planeta absorbe más calor, incrementando la temperatura global." },
+                    { text: "El agua de deshielo congela instantáneamente la atmósfera circundante debido a su baja temperatura.", correct: false, fTitle: "⚡ Refuerzo: Violación Termodinámica", fText: "El agua de deshielo absorbe calor del ambiente al derretirse, pero no genera un enfriamiento autónomo masivo." }
+                ]
+            },
+            {
+                phase: "Desafío 5 de 15: Emisiones de Metano",
+                title: "El Permafrost y la Bomba de Metano",
+                context: "El aumento de la temperatura en el norte de Siberia y Canadá está descongelando capas profundas de permafrost milenario.",
+                question: "¿Por qué el descongelamiento del permafrost representa una amenaza crítica para la dinámica climática global?",
+                options: [
+                    { text: "Libera grandes reservas de metano (CH4) y CO2 atrapadas, un gas con un potencial de calentamiento a corto plazo mucho mayor que el dióxido de carbono.", correct: true, fTitle: "✨ ¡Acierto Crítico!", fText: "El metano liberado acelera drásticamente el forzamiento radiativo en las siguientes décadas." },
+                    { text: "Genera terremotos masivos que destruyen la infraestructura industrial de mitigación en los polos.", correct: false, fTitle: "⚡ Refuerzo: Confusión de Variables", fText: "El riesgo principal del permafrost radica en la liberación biogeoquímica de gases de efecto invernadero almacenados." },
+                    { text: "Provoca la congelación permanente de los océanos adyacentes deteniendo las corrientes marinas.", correct: false, fTitle: "⚡ Refuerzo: Efecto Contrario", fText: "El permafrost libera gases que aumentan el calentamiento, no congelan los océanos." }
+                ]
+            },
+            {
+                phase: "Desafío 6 de 15: Corrientes Oceánicas",
+                title: "La Alteración de la Circulación Termohalina",
+                context: "El aporte masivo de agua dulce fría por el deshielo de Groenlandia altera la densidad del agua en el Atlántico Norte.",
+                question: "¿Qué consecuencia sistémica tendría una posible desaceleración o colapso de la Circulación Meridional del Atlántico (AMOC)?",
+                options: [
+                    { text: "Una alteración drástica de los patrones climáticos globales, con enfriamiento severo en Europa occidental y alteraciones en monzones tropicales.", correct: true, fTitle: "🌟 ¡Análisis Preciso!", fText: "La AMOC distribuye calor en el planeta; su alteración desestabiliza climas regionales enteros de forma abrupta." },
+                    { text: "La estabilización instantánea de la temperatura global gracias al agua fría acumulada en los polos.", correct: false, fTitle: "⚡ Refuerzo: Falacia de Estabilización", fText: "Un cambio en las corrientes oceánicas no estabiliza el clima, sino que provoca anomalías climáticas extremas y caóticas." },
+                    { text: "La evaporación completa de los océanos debido al choque térmico de las corrientes.", correct: false, fTitle: "⚡ Refuerzo: Exageración Irreal", fText: "Las leyes físicas impiden que una alteración de corrientes provoque la evaporación masiva de los océanos." }
+                ]
+            },
+            {
+                phase: "Desafío 7 de 15: Deforestación y Puntos de Inflexión",
+                title: "La Sabanización de la Amazonía",
+                context: "La combinación de deforestación sistemática, incendios y aumento de temperaturas empuja a la selva amazónica a un umbral crítico.",
+                question: "¿Qué significa que un ecosistema clave como la Amazonía alcance un punto de inflexión (tipping point) ecológico?",
+                options: [
+                    { text: "Que el bosque pierde su capacidad autogeneradora de humedad, transformándose irreversiblemente en un ecosistema degradado tipo sabana.", correct: true, fTitle: "✨ ¡Exacto!", fText: "Un tipping point marca una transición de fase irreversible donde el sistema colapsa hacia un estado degradado permanente." },
+                    { text: "Que la vegetación duplica su tasa de crecimiento para consumir todo el carbono industrial en cuestión de meses.", correct: false, fTitle: "⚡ Refuerzo: Esperanza Irreal", fText: "La destrucción de la cobertura forestal reduce drásticamente la captura de carbono, no la acelera." },
+                    { text: "Que el ecosistema se vuelve inmune a cualquier alteración climática futura gracias a su adaptabilidad.", correct: false, fTitle: "⚡ Refuerzo: Negación Sistémica", fText: "Los ecosistemas tienen límites de resiliencia; superados estos umbrales, colapsan en lugar de volverse inmunes." }
+                ]
+            },
+            {
+                phase: "Desafío 8 de 15: Modelos Energéticos",
+                title: "La Transición Energética y su Inercia",
+                context: "Modificar la infraestructura energética global basada en combustibles fósiles requiere enormes inversiones de tiempo y recursos.",
+                question: "¿Por qué el concepto de 'inercia del sistema socioenergético' es fundamental al planificar políticas de mitigación climática?",
+                options: [
+                    { text: "Porque la infraestructura instalada, los intereses económicos y los tiempos de recambio tecnológico impiden cambios instantáneos, exigiendo planificación anticipada.", correct: true, fTitle: "🌟 ¡Excelente Visión!", fText: "La inercia demuestra que las soluciones tecnológicas tardan años en implementarse a escala global." },
+                    { text: "Porque las energías renovables generan resistencia magnética en la atmósfera que detiene el viento de inmediato.", correct: false, fTitle: "⚡ Refuerzo: Concepto Erróneo", fText: "La inercia energética se refiere a la lentitud estructural para transformar la matriz industrial y económica global." },
+                    { text: "Porque el sistema energético opera de forma totalmente independiente del clima y la atmósfera.", correct: false, fTitle: "⚡ Refuerzo: Desconexión Sistémica", fText: "La quema de combustibles fósiles en el sistema energético es la causa principal del desequilibrio atmosférico." }
+                ]
+            },
+            {
+                phase: "Desafío 9 de 15: Geoingeniería Solar",
+                title: "El Dilema de los Aerosoles Estratosféricos",
+                context: "Ante el fracaso de las reducciones de emisiones, algunos sectores proponen inyectar aerosoles de azufre en la estratosfera para reflejar la luz solar.",
+                question: "¿Cuál es el principal riesgo sistémico asociado al uso de la gestión de radiación solar (Geoingeniería por aerosoles)?",
+                options: [
+                    { text: "No resuelve la acumulación de CO2 ni la acidificación oceánica, y si se interrumpe abruptamente, causa un calentamiento terminal hiperacelerado.", correct: true, fTitle: "✨ ¡Análisis Crítico Brillante!", fText: "Enmascarar la temperatura sin reducir emisiones genera riesgos catastróficos si el sistema de inyección falla ('termination shock')." },
+                    { text: "Enfría el planeta de manera uniforme restaurando por completo el clima preindustrial sin ningún efecto secundario.", correct: false, fTitle: "⚡ Refuerzo: Reduccionismo Peligroso", fText: "Ignora los efectos secundarios graves sobre los ciclos de lluvias globales y la persistencia de la acidez oceánica." },
+                    { text: "Convierte los gases de efecto invernadero en oxígeno puro instantáneamente en la alta atmósfera.", correct: false, fTitle: "⚡ Refuerzo: Imposibilidad Física", fText: "Los aerosoles reflejan luz solar, pero no transforman mágicamente moléculas de CO2 en oxígeno." }
+                ]
+            },
+            {
+                phase: "Desafío 10 de 15: Captura y Almacenamiento (CCUS)",
+                title: "Tecnologías de Emisiones Negativas",
+                context: "Las tecnologías de captura directa de aire (DAC) y bioenergía con captura de carbono (BECCS) se debaten como herramientas de mitigación.",
+                question: "¿Cuál es la limitación termodinámica y energética más crítica de las tecnologías de captura de carbono a escala masiva?",
+                options: [
+                    { text: "Requieren una cantidad masiva de energía para separar y comprimir el CO2 diluido del aire, lo que puede incrementar emisiones si esa energía no es limpia.", correct: true, fTitle: "🌟 ¡Exacto!", fText: "La termodinámica exige energía para concentrar moléculas dispersas; si esa energía proviene de fósiles, el balance se anula." },
+                    { text: "El dióxido de carbono capturado se expande espontáneamente hasta duplicar su volumen inicial en el almacenamiento.", correct: false, fTitle: "⚡ Refuerzo: Error Termodinámico", fText: "El gas capturado se comprime y almacena bajo estrictos controles físicos, no se expande espontáneamente." },
+                    { text: "Funcionan sin ningún aporte energético externo aprovechando únicamente la fuerza de gravedad nocturna.", correct: false, fTitle: "⚡ Refuerzo: Violación de la Física", fText: "Ningún proceso químico de captura masiva opera sin un suministro constante de trabajo o energía externa." }
+                ]
+            },
+            {
+                phase: "Desafío 11 de 15: Economía Ecológica",
+                title: "Crecimiento vs. Límites Planetarios",
+                context: "El modelo económico tradicional asume un crecimiento material infinito en un planeta con recursos y sumideros finitos.",
+                question: "Desde la perspectiva de la dinámica de sistemas y los límites planetarios, ¿qué implica el concepto de 'crecimiento infinito'?",
+                options: [
+                    { text: "Es una imposibilidad biofísica; tarde o temprano el sistema choca contra los umbrales de capacidad de carga de la Tierra.", correct: true, fTitle: "✨ ¡Gran Criterio Económico-Ecológico!", fText: "Ningún subsistema físico puede crecer indefinidamente dentro de una biosfera finita sin colapsar los sumideros." },
+                    { text: "Es perfectamente viable si se digitalizan por completo todas las industrias pesadas del planeta.", correct: false, fTitle: "⚡ Refuerzo: Falacia Digital", fText: "La economía digital requiere infraestructura física masiva, energía y extracción de minerales con impacto real en los ecosistemas." },
+                    { text: "Garantiza que la biocapacidad del planeta se multiplique de forma automática cada año.", correct: false, fTitle: "⚡ Refuerzo: Desconexión Biofísica", fText: "La biocapacidad del planeta es limitada y se reduce cuando el sistema sufre sobreexplotación y degradación." }
+                ]
+            },
+            {
+                phase: "Desafío 12 de 15: Gobernanza Climática",
+                title: "El Dilema del Prisionero Climático",
+                context: "Las negociaciones internacionales sobre el clima a menudo se enfrentan a incentivos donde los países priorizan el beneficio económico individual a corto plazo.",
+                question: "¿Por qué la acción climática global se asemeja a un 'dilema del prisionero' institucional?",
+                options: [
+                    { text: "Porque si un país reduce emisiones unilateralmente sin acuerdos vinculantes, asume costos económicos mientras otros se benefician de la atmósfera común.", correct: true, fTitle: "🌟 ¡Excelente Perspectiva Sistémica!", fText: "La tragedia de los bienes comunes globales exige marcos de gobernanza cooperativa y transparente para evitar incentivos perversos." },
+                    { text: "Porque los tribunales internacionales pueden congelar la atmósfera terrestre si un país contamina demasiado.", correct: false, fTitle: "⚡ Refuerzo: Interpretación Jurídica Errónea", fText: "El dilema radica en la cooperación y los incentivos económicos entre naciones soberanas frente a un bien común." },
+                    { text: "Porque el clima responde exclusivamente a leyes judiciales dictadas por los gobiernos locales.", correct: false, fTitle: "⚡ Refuerzo: Confusión de Conceptos", fText: "El clima responde a dinámicas termodinámicas y biofísicas, no a decretos legales gubernamentales." }
+                ]
+            },
+            {
+                phase: "Desafío 13 de 15: Resiliencia y Adaptación",
+                title: "Adaptación Basada en Ecosistemas (AbE)",
+                context: "Dado que cierta inercia térmica ya es inevitable, las sociedades deben planificar la adaptación además de la mitigación.",
+                question: "¿Qué ventaja fundamental ofrece la Adaptación Basada en Ecosistemas (AbE) frente a la infraestructura puramente gris (diques de concreto)?",
+                options: [
+                    { text: "Restauran la resiliencia natural y brindan co-beneficios múltiples como captura de carbono, biodiversidad y regulación hídrica.", correct: true, fTitle: "✨ ¡Acierto en Gestión Sostenible!", fText: "Las soluciones basadas en la naturaleza son dinámicas, autorregulables y mucho más resilientes ante eventos extremos." },
+                    { text: "Eliminan por completo la necesidad de reducir las emisiones industriales en las ciudades.", correct: false, fTitle: "⚡ Refuerzo: Falsa Oposición", fText: "La adaptación complementa, pero nunca reemplaza la necesidad urgente de mitigar y reducir las emisiones de gases." },
+                    { text: "Convierten cualquier evento climático extremo en energía eléctrica para abastecer a la población.", correct: false, fTitle: "⚡ Refuerzo: Expectativa Irreal", fText: "Los ecosistemas reducen vulnerabilidades y riesgos, pero no transforman catástrofes climáticas en fuentes de energía." }
+                ]
+            },
+            {
+                phase: "Desafío 14 de 15: Análisis de Ciclo de Vida",
+                title: "Falacias en Tecnologías Verdes",
+                context: "La transición hacia vehículos eléctricos y energías solares requiere una alta extracción minera de litio, cobalto y tierras raras.",
+                question: "Desde un enfoque de Análisis de Ciclo de Vida (ACV), ¿por qué es crucial evaluar integralmente la cadena de valor de las tecnologías verdes?",
+                options: [
+                    { text: "Para evitar desplazar los impactos ambientales de la atmósfera hacia la destrucción de ecosistemas locales y la contaminación minera.", correct: true, fTitle: "🌟 ¡Análisis Holístico Impecable!", fText: "Una solución climática no debe generar desastres ecológicos en otra etapa de su ciclo de vida o cadena de suministro." },
+                    { text: "Para garantizar que los paneles solares funcionen de manera óptima durante la medianoche sin baterías.", correct: false, fTitle: "⚡ Refuerzo: Confusión Técnica", fText: "El ACV evalúa los impactos ambientales de un producto desde su extracción hasta su disposición final, no la física solar nocturna." },
+                    { text: "Porque demuestra que las tecnologías verdes generan más emisiones que la quema directa de carbón.", correct: false, fTitle: "⚡ Refuerzo: Falacia Metodológica", fText: "Aunque tienen impactos mineros, el balance neto de emisiones de las tecnologías limpias es considerablemente menor a largo plazo." }
+                ]
+            },
+            {
+                phase: "Desafío 15 de 15: Sinergia Global",
+                title: "La Estabilización del Sistema Tierra",
+                context: "Has guiado al sistema climático a través de múltiples desafíos e inercias críticas. Llegó la prueba definitiva de gestión.",
+                question: "¿Cuál es la conclusión central de la dinámica de sistemas aplicada al cambio global para asegurar la estabilidad a largo plazo?",
+                options: [
+                    { text: "Se requiere una transformación sinérgica y sistémica que combine mitigación agresiva, protección de sumideros y equidad socioecológica.", correct: true, fTitle: "🎉 ¡Simulación Conquistada con Honores!", fText: "¡Excelente! Has demostrado un dominio absoluto de la dinámica climática y la mediación sistémica global." },
+                    { text: "Basta con esperar a que el planeta se ajuste por sí solo mediante ciclos naturales milenarios sin intervención humana.", correct: false, fTitle: "⚡ Refuerzo: Inercia Pasiva Peligrosa", fText: "Los tiempos geológicos naturales son demasiado lentos frente a la tasa actual de alteración antropogénica; la pasividad lleva al colapso." },
+                    { text: "La tecnología por sí sola resolverá el problema sin modificar los patrones de consumo ni proteger la biodiversidad.", correct: false, fTitle: "⚡ Refuerzo: Reduccionismo Final", fText: "El colapso de los sumideros demuestra que la tecnología aislada sin cambios sistémicos y ecológicos es insuficiente." }
+                ]
+            }
+        ];
+
+        function updateHUD() {
+            let hearts = "";
+            for(let i=1; i<=3; i++) {
+                hearts += i <= gameState.lives ? '<span title="Planeta Vivo">🌍</span>' : '<span title="Tierra Sin Vida">🌑</span>';
+            }
+            document.getElementById('lives-container').innerHTML = `<span class="text-xs text-slate-400 font-semibold uppercase tracking-wider mr-1">Resiliencia Planetaria:</span> ` + hearts;
+
+            document.getElementById('stat-temp').innerText = gameState.temp.toFixed(1) + " °C";
+            document.getElementById('stat-gases').innerText = gameState.gases + " Gt";
+
+            const tempEl = document.getElementById('stat-temp');
+            if(gameState.temp >= 2.5) {
+                tempEl.className = "text-base sm:text-lg font-bold text-red-500";
+            } else if(gameState.temp >= 1.8) {
+                tempEl.className = "text-base sm:text-lg font-bold text-red-400";
+            } else if(gameState.temp >= 1.5) {
+                tempEl.className = "text-base sm:text-lg font-bold text-amber-400";
+            } else {
+                tempEl.className = "text-base sm:text-lg font-bold text-emerald-400";
+            }
+        }
+
+        function renderGame() {
+            updateHUD();
+            const container = document.getElementById('game-container');
+            const data = questions[gameState.currentIndex];
+
+            document.getElementById('phase-tag').innerText = `Desafío ${gameState.currentIndex + 1} de 15`;
+
+            let html = `
+                <div class="mb-3">
+                    <span class="text-[10px] uppercase font-bold text-blue-400 bg-blue-950/80 px-2.5 py-0.5 rounded border border-blue-600/30">${data.phase}</span>
+                    <h2 class="text-base sm:text-lg font-bold text-blue-100 mt-1.5 mb-1">${data.title}</h2>
+                    <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-3">${data.context}</p>
+                    <div class="p-3.5 rounded-xl bg-slate-900/90 border border-blue-900/50 text-slate-100 text-xs sm:text-sm font-medium">
+                        ${data.question}
+                    </div>
+                </div>
+                <div class="space-y-2.5" id="options-box">
+            `;
+
+            let shuffledOptions = [...data.options].sort(() => Math.random() - 0.5);
+            
+            shuffledOptions.forEach((opt, idx) => {
+                let letter = String.fromCharCode(65 + idx);
+                html += `
+                    <button onclick='handleChoice(${opt.correct}, ${JSON.stringify(opt.fTitle)}, ${JSON.stringify(opt.fText)})' 
+                        class="option-card w-full text-left p-3 rounded-xl text-xs sm:text-sm text-slate-200 flex items-start gap-3">
+                        <span class="flex-shrink-0 w-6 h-6 rounded bg-blue-500/10 text-blue-400 font-bold flex items-center justify-center border border-blue-500/30 text-xs">${letter}</span>
+                        <span class="leading-normal my-auto">${opt.text}</span>
+                    </button>
+                `;
+            });
+
+            html += `</div><div id="feedback-panel" class="hidden mt-3"></div>`;
+            container.innerHTML = html;
+        }
+
+        function handleChoice(isCorrect, fTitle, fText) {
+            const optionsBox = document.getElementById('options-box');
+            const feedbackPanel = document.getElementById('feedback-panel');
+            const wrapper = document.getElementById('main-wrapper');
+
+            const buttons = optionsBox.querySelectorAll('button');
+            buttons.forEach(b => b.disabled = true);
+
+            feedbackPanel.classList.remove('hidden');
+
+            if (isCorrect) {
+                gameState.gases += 4;
+                gameState.temp += 0.04;
+                updateHUD();
+                updateChartData();
+
+                let nextAction = "";
+                if (gameState.currentIndex < questions.length - 1) {
+                    nextAction = `<button onclick="nextQuestion()" class="mt-2.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider">Siguiente Desafío Climático →</button>`;
+                } else {
+                    nextAction = `<div class="mt-2 text-emerald-300 font-bold text-xs">🎉 ¡Simulación completada con éxito! Has dominado los 15 desafíos y salvado la estabilidad del planeta.</div>`;
+                }
+
+                feedbackPanel.className = "p-3.5 sm:p-4 rounded-xl text-xs sm:text-sm bg-emerald-950/95 border border-emerald-500 text-emerald-100";
+                feedbackPanel.innerHTML = `
+                    <div class="font-bold text-emerald-400 text-sm mb-1">${fTitle}</div>
+                    <p class="text-slate-200 mb-2.5">${fText}</p>
+                    ${nextAction}
+                `;
+            } else {
+                gameState.lives -= 1;
+                gameState.temp += 0.2;
+                gameState.gases += 15;
+                updateHUD();
+                updateChartData();
+
+                wrapper.classList.add('shake-effect');
+                setTimeout(() => wrapper.classList.remove('shake-effect'), 400);
+
+                if (gameState.lives <= 0) {
+                    feedbackPanel.className = "p-3.5 sm:p-4 rounded-xl text-xs sm:text-sm bg-red-950/95 border border-red-600 text-red-100";
+                    feedbackPanel.innerHTML = `
+                        <div class="font-bold text-red-400 text-sm mb-1">🌑 PLANETA COLAPSADO (Tierra Sin Vida)</div>
+                        <p class="text-slate-200 mb-2.5">Has agotado tus 3 tierras vivas debido a errores de gestión sistémica. El planeta se ha convertido en un páramo estéril.</p>
+                        <button onclick="restartGame()" class="px-4 py-2 rounded-lg bg-red-700 hover:bg-red-600 text-white font-bold text-xs uppercase">Reiniciar Simulación ⟲</button>
+                    `;
+                } else {
+                    let continueAction = gameState.currentIndex < questions.length - 1 
+                        ? `<button onclick="nextQuestion()" class="px-4 py-2 rounded-lg bg-amber-700 hover:bg-amber-600 text-white font-bold text-xs uppercase">Continuar al Siguiente Desafío →</button>`
+                        : `<div class="mt-2 text-amber-300 font-bold text-xs">Simulación finalizada con penalizaciones.</div>`;
+
+                    feedbackPanel.className = "p-3.5 sm:p-4 rounded-xl text-xs sm:text-sm bg-amber-950/95 border border-amber-600 text-amber-100";
+                    feedbackPanel.innerHTML = `
+                        <div class="font-bold text-amber-400 text-sm mb-1">${fTitle} (Se ha perdido una Tierra Viva: 🌑)</div>
+                        <p class="text-slate-200 mb-2.5">${fText}</p>
+                        ${continueAction}
+                    `;
+                }
+            }
+        }
+
+        function nextQuestion() {
+            gameState.currentIndex++;
+            renderGame();
+        }
+
+        function restartGame() {
+            gameState.lives = 3;
+            gameState.temp = 1.1;
+            gameState.gases = 50;
+            gameState.currentIndex = 0;
+            gameState.history = {
+                labels: ["Inicio", "D1"],
+                temp: [1.1, 1.1],
+                gases: [50, 50]
+            };
+            if(climateChart) {
+                climateChart.destroy();
+            }
+            initChart();
+            renderGame();
+        }
+    </script>
+</body>
+</html>
